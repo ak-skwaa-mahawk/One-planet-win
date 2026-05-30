@@ -1,0 +1,212 @@
+import math
+import random
+import sys
+
+class DataLogger:
+    """Manages historical trends and plots mathematical network efficiency metrics."""
+    def __init__(self):
+        self.history = []
+
+    def log_cycle(self, turn, integrity, hype, sector_data):
+        record = {
+            "turn": turn,
+            "integrity": integrity,
+            "hype": hype,
+            "sectors": {k: v["tether"] for k, v in sector_data.items()}
+        }
+        self.history.append(record)
+
+    def print_historical_summary(self):
+        print("\n================== HISTORICAL NETWORK DATA SYSTEM ==================")
+        print(f"Total Logged Cycles: {len(self.history)}")
+        if not self.history:
+            print("No data recorded.")
+            return
+        
+        start = self.history[0]
+        end = self.history[-1]
+        print(f"Initial Network Integrity: {start['integrity']}% -> Final Integrity: {end['integrity']}%")
+        print(f"Initial Hype Static:       {start['hype']*100:.1f}% -> Final Hype Static:     {end['hype']*100:.1f}%")
+        print("--------------------------------------------------------------------")
+        print(" trajectory trend map:")
+        for record in self.history[-10:]:  # Display last 10 steps for telemetry mapping
+            dots = int(record['integrity'] / 2)
+            print(f"  Cycle {record['turn']:03d} | [{'#' * dots}{' ' * (50 - dots)}] {record['integrity']}%")
+        print("====================================================================")
+
+
+class AdvancedCosmicDashboard:
+    def __init__(self):
+        self.alpha = 50.0
+        self.beta = 0.35
+        self.gamma = 0.5
+        
+        self.turn = 1
+        self.global_hype = 0.75
+        self.tether_integrity = 20.0
+        self.energy_pool = 100  # Currency consumed to deploy defensive commands
+        
+        # Sector Databases: [Scale, Base Logic, Drag, Tether %, Active Buff Timer]
+        self.grid = {
+            "EARTH":      {"scale": 1.0,    "l_base": 0.90, "drag": 12.0, "tether": 45.0, "shield": 0},
+            "SOL_SYS":    {"scale": 10.0,   "l_base": 0.85, "drag": 25.0, "tether": 20.0, "shield": 0},
+            "MILKYWAY":   {"scale": 100.0,  "l_base": 0.95, "drag": 40.0, "tether": 10.0, "shield": 0},
+            "DEEP_COSMO": {"scale": 1000.0, "l_base": 1.00, "drag": 60.0, "tether": 5.0,  "shield": 0}
+        }
+        
+        self.logger = DataLogger()
+        self.active_incident = None
+
+    def compute_noisy_logic(self, sector_id):
+        sec = self.grid[sector_id]
+        if sec["shield"] > 0:
+            return round(sec["l_base"] * 100, 1)  # Shield completely blocks noise pollution
+            
+        S = sec["scale"]
+        t_integrated = sec["tether"] / 100.0
+        scale_damping = math.log(S + math.e)
+        
+        noise_impact = (self.global_hype * (1.0 - t_integrated) / scale_damping) * random.uniform(0.9, 1.1)
+        return round(max(0.0, sec["l_base"] - noise_impact) * 100, 1)
+
+    def compute_lock_velocity(self, sector_id, current_logic):
+        sec = self.grid[sector_id]
+        L_s = current_logic / 100.0
+        D_s = max(1.0, float(sec["drag"]))
+        S = sec["scale"]
+        
+        other_tethers = [s["tether"] for k, s in self.grid.items() if k != sector_id]
+        e_adj = sum(other_tethers) / len(other_tethers)
+        
+        scale_friction = math.pow(S, self.gamma)
+        internal_vel = (self.alpha * L_s) / (scale_friction * D_s)
+        external_pull = self.beta * e_adj
+        
+        return round(max(0.1, min(40.0, internal_vel + external_pull)), 2)
+
+    def execute_time_step(self):
+        total_tether = 0
+        # Tick down sector ability timers
+        for sector_id, data in self.grid.items():
+            if data["shield"] > 0:
+                data["shield"] -= 1
+                
+            logic_score = self.compute_noisy_logic(sector_id)
+            velocity = self.compute_lock_velocity(sector_id, logic_score)
+            
+            self.grid[sector_id]["tether"] = min(100.0, round(self.grid[sector_id]["tether"] + velocity, 1))
+            total_tether += self.grid[sector_id]["tether"]
+            
+        self.tether_integrity = round(total_tether / len(self.grid), 1)
+        self.energy_pool = min(150, self.energy_pool + 15)  # Recharge energy over time
+        
+        # Log this iteration data
+        self.logger.log_cycle(self.turn, self.tether_integrity, self.global_hype, self.grid)
+        
+        # Randomly inject adversity metrics
+        if self.turn % 3 == 0 and random.random() > 0.3:
+            self.trigger_threat()
+        else:
+            self.active_incident = None
+            
+        self.turn += 1
+
+    def trigger_threat(self):
+        threats = [
+            ("Information Decoupling Strike", 0.20, "EARTH"),
+            ("Scale Fracture Anomaly", 0.05, "MILKYWAY"),
+            ("Hyper-Inflationary Leak", 0.15, "SOL_SYS")
+        ]
+        name, hype_add, target = random.choice(threats)
+        self.global_hype = min(1.0, self.global_hype + hype_add)
+        if name == "Scale Fracture Anomaly":
+            self.grid[target]["drag"] = min(100.0, self.grid[target]["drag"] + 20.0)
+        self.active_incident = f"{name} affecting {target}"
+
+    def process_player_input(self, command_str):
+        cmd = command_str.strip().upper()
+        if not cmd:
+            return "Cycle advanced passively."
+            
+        if cmd == "1":
+            if self.energy_pool >= 30:
+                self.grid["EARTH"]["shield"] = 4
+                self.energy_pool -= 30
+                return "SUCCESS: Earth Logic Shield deployed! (Immune to noise for 3 turns)"
+            return "ERROR: Insufficient system energy points."
+        elif cmd == "2":
+            if self.energy_pool >= 40:
+                self.grid["SOL_SYS"]["drag"] = max(5.0, self.grid["SOL_SYS"]["drag"] - 20.0)
+                self.energy_pool -= 40
+                return "SUCCESS: Sol Resource Funnel executed! Drag reduced."
+            return "ERROR: Insufficient system energy points."
+        elif cmd == "3":
+            if self.energy_pool >= 50:
+                self.global_hype = max(0.1, self.global_hype - 0.35)
+                self.energy_pool -= 50
+                return "SUCCESS: Counter-Gaslight Audit deployed! Hype static crushed."
+            return "ERROR: Insufficient system energy points."
+        elif cmd == "EXIT":
+            return "EXIT"
+        else:
+            return f"Unknown command code '{cmd}'. Step processed neutrally."
+
+    def render_ui(self, console_msg=""):
+        print("\n" * 2) # Create separator buffer space
+        print("=" * 72)
+        print(f" COSMIC INTEGRATION MAIN ENGINES | CYCLE: {self.turn:03d} | NETWORK: ACTIVE")
+        print("=" * 72)
+        print(f" MATRIX LOGIC STABILITY: [{self.tether_integrity:5.1f}%] | HYPER-PROP STATIC: [{self.global_hype*100:5.1f}%]")
+        print(f" COUNTERMEASURE STORAGE: [{self.energy_pool:03d}/150 MJ ENERGY PACKETS]")
+        print("-" * 72)
+        
+        if self.active_incident:
+            print(f" \033[91m⚠️ INTRUSION DETECTED: {self.active_incident.upper()}\033[0m")
+        else:
+            print(" \033[92m✅ SYSTEM SECURE\033[0m : Universal alignment calculations matching baseline.")
+        print("-" * 72)
+        
+        print(f" {'SECTOR ID':12} | {'INTEGRATION':11} | {'LOGIC VECTOR':12} | {'FRICTION DRAG':13} | {'BUFF'}")
+        print(" " + "-" * 70)
+        for sector_id, data in self.grid.items():
+            logic_score = self.compute_noisy_logic(sector_id)
+            buff_text = f"SHIELD ({data['shield']})" if data["shield"] > 0 else "NONE"
+            
+            bar_width = 10
+            filled = int((data['tether'] / 100.0) * bar_width)
+            progress_bar = f"[{'#' * filled}{'-' * (bar_width - filled)}]"
+            
+            print(f" {sector_id:12} | {progress_bar} {data['tether']:4.1f}% | {logic_score:10.1f}% | {data['drag']:13.1f} | {buff_text}")
+        
+        print("=" * 72)
+        print(" COUNTERMEASURE COMMAND MENU:")
+        print("  [1] Earth Shield (-30 Energy)     | [2] Sol Resource Funnel (-40 Energy)")
+        print("  [3] Counter-Audit (-50 Energy)    | [ENTER] Skip/Pass Passive Cycle")
+        print("  [EXIT] Close Grid Interface")
+        print("=" * 72)
+        if console_msg:
+            print(f" SYSTEM RESPONSE LOG: {console_msg}")
+
+
+# --- MAIN RUNTIME TERMINAL EXECUTION LOOP ---
+dashboard = AdvancedCosmicDashboard()
+msg = "Interface Core Online. Enforce math and baseline equality to lock the grid."
+
+while True:
+    dashboard.render_ui(console_msg=msg)
+    
+    # Check Winning Framework Status
+    if dashboard.tether_integrity >= 90.0 and dashboard.global_hype <= 0.20:
+        print("\n\033[92m🏆 CEILING SYSTEM LOCKED: The complete Milky Way is tethered to pure logic!\033[0m")
+        dashboard.logger.print_historical_summary()
+        break
+        
+    user_action = input("\nEnter system command directive -> ")
+    
+    msg = dashboard.process_player_input(user_action)
+    if msg == "EXIT":
+        print("\nClosing connection to terminal core nodes.")
+        dashboard.logger.print_historical_summary()
+        break
+        
+    dashboard.execute_time_step()
