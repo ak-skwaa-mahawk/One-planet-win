@@ -1,0 +1,132 @@
+import math
+import random
+import time
+
+class CosmicTelemetryEngine:
+    def __init__(self):
+        # Operational Scaling Properties
+        self.alpha = 50.0
+        self.beta = 0.35
+        self.gamma = 0.5
+        
+        # System State Variables
+        self.global_hype = 0.75          # 75% Hype intensity
+        self.tether_integrity = 30.0     # Global Tether progress
+        
+        # Cosmic Grid Sectors [Scale, Base Logic, Structural Drag, Tether Integration %]
+        self.grid = {
+            "EARTH":      {"scale": 1.0,    "l_base": 0.90, "drag": 12.0, "tether": 45.0},
+            "SOL_SYS":    {"scale": 10.0,   "l_base": 0.85, "drag": 25.0, "tether": 20.0},
+            "MILKYWAY":   {"scale": 100.0,  "l_base": 0.95, "drag": 40.0, "tether": 10.0},
+            "DEEP_COSMO": {"scale": 1000.0, "l_base": 1.00, "drag": 60.0, "tether": 5.0}
+        }
+
+    def compute_noisy_logic(self, sector_id):
+        sec = self.grid[sector_id]
+        S = sec["scale"]
+        t_integrated = sec["tether"] / 100.0
+        
+        # Stochastic variance variable (R)
+        R = random.uniform(0.8, 1.2)
+        
+        # Compute Noise Injection Formula
+        scale_damping = math.log(S + math.e)
+        noise_impact = (self.global_hype * (1.0 - t_integrated) / scale_damping) * R
+        
+        # Final Attenuated Logic Score
+        final_logic = max(0.0, sec["l_base"] - noise_impact)
+        return round(final_logic * 100, 1)
+
+    def compute_lock_velocity(self, sector_id, current_logic):
+        sec = self.grid[sector_id]
+        L_s = current_logic / 100.0
+        D_s = max(1.0, float(sec["drag"]))
+        S = sec["scale"]
+        
+        # Simplified adjacent pull calculation (average tether of other systems)
+        other_tethers = [s["tether"] for k, s in self.grid.items() if k != sector_id]
+        e_adj = sum(other_tethers) / len(other_tethers)
+        
+        # Vector Math Calculation
+        scale_friction = math.pow(S, self.gamma)
+        internal_vel = (self.alpha * L_s) / (scale_friction * D_s)
+        external_pull = self.beta * e_adj
+        
+        return round(max(0.1, min(40.0, internal_vel + external_pull)), 2)
+
+    def execute_time_step(self):
+        # Update System Variables
+        total_tether = 0
+        for sector_id in self.grid.keys():
+            logic_score = self.compute_noisy_logic(sector_id)
+            velocity = self.compute_lock_velocity(sector_id, logic_score)
+            
+            # Step the integration forward safely capped at 100%
+            self.grid[sector_id]["tether"] = min(100.0, round(self.grid[sector_id]["tether"] + velocity, 1))
+            total_tether += self.grid[sector_id]["tether"]
+            
+        self.tether_integrity = round(total_tether / len(self.grid), 1)
+
+    def trigger_threat_event(self):
+        events = [
+            ("Information Decoupling Strike", "Global Hype surges! Media grid corrupted."),
+            ("Scale Fracture Anomaly", "Internal bureaucratic friction spikes structural drag."),
+            ("Hyper-Inflationary Hype Leak", "Speculative noise bleeds into interplanetary pipelines.")
+        ]
+        chosen_event, desc = random.choice(events)
+        
+        if chosen_event == "Information Decoupling Strike":
+            self.global_hype = min(1.0, self.global_hype + 0.20)
+        elif chosen_event == "Scale Fracture Anomaly":
+            self.grid["SOL_SYS"]["drag"] = min(100.0, self.grid["SOL_SYS"]["drag"] + 15.0)
+        elif chosen_event == "Hyper-Inflationary Hype Leak":
+            self.grid["EARTH"]["drag"] = min(100.0, self.grid["EARTH"]["drag"] + 10.0)
+            self.global_hype = min(1.0, self.global_hype + 0.10)
+            
+        return chosen_event, desc
+
+    def render_interface(self, current_turn, incident=None):
+        # UI Header Layout
+        print("\033[H\033[J", end="") # Clear console frame
+        print("=" * 72)
+        print(f" COSMIC TELEMETRY NODE | TURN: {current_turn:03d} | METRIC FREQUENCY: REAL-TIME")
+        print("=" * 72)
+        print(f" GLOBAL NETWORK INTEGRITY: [{self.tether_integrity:5.1f}%]  |  ADVERSARIAL HYPER-PROP: [{self.global_hype*100:5.1f}%]")
+        print("-" * 72)
+        
+        # Dynamic Threat Warning Bar
+        if incident:
+            print(f" \033[91m⚠️ INTRUSION DETECTED: {incident[0].upper()}\033[0m")
+            print(f"   Details: {incident[1]}")
+        else:
+            print(" \033[92m✅ MATRIX SHIELD OPERATIONAL\033[0m : No active systemic fractures detected.")
+        print("-" * 72)
+        
+        # Sector Grid Readout Table Layout
+        print(f" {'SECTOR ID':12} | {'TETHER LOCK':11} | {'LOGIC ADJ. (Ls)':15} | {'STRUCTURAL DRAG':15} | {'RATE/t'}")
+        print(" " + "-" * 70)
+        for sector_id, data in self.grid.items():
+            current_logic = self.compute_noisy_logic(sector_id)
+            vel = self.compute_lock_velocity(sector_id, current_logic)
+            
+            # Simple Text-Based Loading Bar graphic
+            bar_width = 10
+            filled = int((data['tether'] / 100.0) * bar_width)
+            progress_bar = f"[{'#' * filled}{'-' * (bar_width - filled)}]"
+            
+            print(f" {sector_id:12} | {progress_bar} {data['tether']:4.1f}% | {current_logic:13.1f}% | {data['drag']:15.1f} | +{vel}%")
+        print("=" * 72)
+
+# --- RUNNING TELEMETRY CYCLE DEMO ---
+sim = CosmicTelemetryEngine()
+
+# Simulate 3 sequential real-time ticks to observe vector mechanics
+for tick in range(1, 4):
+    incident_report = None
+    # Program a randomized adversarial strike on cycle 2 to verify noise injection
+    if tick == 2:
+        incident_report = sim.trigger_threat_event()
+        
+    sim.render_interface(current_turn=tick, incident=incident_report)
+    sim.execute_time_step()
+    time.sleep(1.5) # Time delta simulator gap
