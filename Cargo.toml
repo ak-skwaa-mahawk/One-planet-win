@@ -1,0 +1,8 @@
+[package]
+name = "planet_gated_scheduler"
+version = "0.1.0"
+edition = "2021"
+description = "Planet-gated sovereign compute scheduler (One-planet-win throat)"
+license = "MIT"
+
+[dependencies]
